@@ -1,0 +1,26 @@
+FROM python:3.10-slim
+
+# Install necessary packages
+RUN apt-get update -y && \
+    apt-get install -y git cmake build-essential \
+    && apt-get upgrade -y \
+    && apt-get autoremove -y --purge \
+    && apt-get clean -y \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install wheel
+RUN python -m pip install --no-cache-dir --upgrade pip wheel setuptools build && rm -rf /root/.cache/pip
+
+# Create the entrypoint.sh script
+RUN echo '#!/bin/bash' > /entrypoint.sh && \
+    echo 'git clone https://github.com/microsoft/onnxruntime-extensions.git' >> /entrypoint.sh && \
+    echo 'cd onnxruntime-extensions' >> /entrypoint.sh && \
+    echo 'git checkout $1' >> /entrypoint.sh && \
+    echo 'pip install -r requirements.txt'  >> /entrypoint.sh && \
+    echo 'python -m build --wheel --outdir /output' >> /entrypoint.sh
+
+# Give execute permission to entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Set the entrypoint script
+ENTRYPOINT ["/entrypoint.sh"]
